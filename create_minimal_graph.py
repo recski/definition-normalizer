@@ -215,7 +215,7 @@ def setup_parser():
                        help='try to normalize definitions')
     parser.add_argument('--lower', dest='lower', action='store_true', default=False,
                        help='not used yet')
-    parser.add_argument('-i', '--iter', dest='iter_no', default=5, type=int)
+    parser.add_argument('-i', '--iter', dest='iter_no', default=50, type=int)
 
     return parser
 
