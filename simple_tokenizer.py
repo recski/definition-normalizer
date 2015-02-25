@@ -42,7 +42,7 @@ def remove_spec(line, cfg):
 def normalize_word(word, cfg):
     if not word_re.match(word):
         return None
-    return word
+    return word.strip("'\"")
 
 def main():
     parser = setup_parser()
