@@ -17,7 +17,7 @@ def batches(l, n):
         yield l[i:i+n]
 
 class SimpleThreadedLemmatizer():
-    def __init__(self, hunmorph_path, no_threads=8):
+    def __init__(self, hunmorph_path, no_threads=6):
         self.no_threads = no_threads
         self.tok2lemma = {}
         self.hunmorph_path = hunmorph_path
@@ -56,6 +56,15 @@ class SimpleLemmatizer():
         self.tok2lemma = {} if tok2lemma is None else tok2lemma
         self.hunmorph_path = hunmorph_path
         self.analyzer, self.morph_analyzer = self.get_analyzer()
+
+    def get_lemmas(self, words):
+        count = 0
+        for word in words:
+            if count % 100 == 0:
+                logging.info("{0} words done".format(count))
+            count += 1
+            self.tok2lemma.setdefault(word, self.get_lemma(word))
+        logging.info('done')
 
     def get_lemma(self, word, debug=False):
         if word in self.tok2lemma:
@@ -105,6 +114,7 @@ def main():
         word_lists.append(words)
         all_words |= set(words)
 
+    #lemmatizer = SimpleLemmatizer(hunmorph_path)
     lemmatizer = SimpleThreadedLemmatizer(hunmorph_path)
     lemmatizer.get_lemmas(all_words)
     for words in word_lists:
