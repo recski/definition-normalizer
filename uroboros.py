@@ -1,8 +1,9 @@
 from argparse import ArgumentParser
 from random import random
 from collections import defaultdict
-from sys import stdin
 import logging
+from sys import stdin
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s : " +
@@ -19,10 +20,11 @@ def parse_args():
         default='rare',
         help="Skip most frequent/rare words or choose random words to skip")
     p.add_argument('-e', '--error-fn', type=str, default="errors")
+    p.add_argument('-a', '--augmented', dest='filename')
     return p.parse_args()
 
 
-def read_definition_graph(stream):
+def read_definition_graph(stream, all_needed, needed_wds, fn):
     #graph = defaultdict(set)
     graph = {}
     for l in stream:
@@ -33,8 +35,48 @@ def read_definition_graph(stream):
         graph[word] |= set(fs[1:])
     for word, def_words in graph.iteritems():
         def_words -= set([word])
-    return graph
+    if all_needed:    
+        return graph
+    return get_augmented_graph(graph, needed_wds, fn)
 
+
+def get_augmented_graph(graph, needed_wds, fn):
+    logging.info('Augmenting needed list...')
+    needed_graph = {}
+    for wd in needed_wds:
+        if not wd in graph:
+            continue
+        needed_graph[wd] = graph[wd]
+    missing = set([]) 
+    for wd in needed_graph:
+        def_wds = list(needed_graph[wd])
+        for def_w in def_wds:
+            if def_w not in needed_graph:
+                missing.add(def_w)
+    new_needed = set([])          
+    return augment_needed(needed_graph, graph, 1, missing, new_needed, fn)
+
+def augment_needed(needed_graph, graph, iternum, prev_missing, new_needed, fn):
+    if len(prev_missing) == 0:
+        f = open('{0}.augmented'.format(fn), 'w')
+        f.write('\n'.join(list(new_needed)))
+        logging.info('Missing headwords inserted')
+        return needed_graph
+    missing = set([])
+    logging.info('iter {0} of augmenting -- missing words: {1}'
+                 .format(iternum, len(prev_missing)))
+    prev_missing_list = list(prev_missing)
+    for w in prev_missing:
+        if w not in graph:
+            continue
+        needed_graph[w] = graph[w]
+        new_needed.add(w)
+        for dw in list(needed_graph[w]):
+            if dw not in needed_graph and dw not in prev_missing_list \
+               and dw not in missing:
+                missing.add(dw)
+    return augment_needed(needed_graph, graph, 
+                          iternum+1, missing, new_needed, fn)
 
 def get_freqs(graph, mode):
     freqs = defaultdict(int)
@@ -140,11 +182,17 @@ def correct_integrity(graph, error_fn):
 
 def main():
     args = parse_args()
+    all_needed = True
+    needed_wds = set([])
+    if args.filename != None:
+        all_needed = False
+        needed_wds = set([l.strip().decode('utf-8') for l in open(args.filename)])
     logging.info('reading definition graph...')
     if args.definitions == "stdin":
-        def_graph = read_definition_graph(stdin)
+        def_graph = read_definition_graph(stdin, all_needed, needed_wds, args.filename)
     else:
-        def_graph = read_definition_graph(args.definitions)
+        def_graph = read_definition_graph(args.definitions, all_needed, 
+                                          needed_wds, args.filename)
     logging.info('Definition graph read')
     correct_integrity(def_graph, args.error_fn)
     logging.info('Definition integrity corrected')
