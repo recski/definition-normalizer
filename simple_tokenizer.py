@@ -8,11 +8,12 @@ word_re = re.compile(ur'^[A-Za-z\-\'\u2019\u00e9]+$', re.UNICODE)
 def setup_parser():
     parser = ArgumentParser()
     parser.add_argument('-s', '--separator', dest='sep', type=str,
-                       default=' ', help='separator on right side')
-    parser.add_argument('-l', '--lower', dest='lower', action='store_true', default=False,
-                       help='lower all words')
-    parser.add_argument('-e', '--encoding', dest='encoding', type=str, default='utf8',
-                       help='input encoding. Output is always UTF8')
+                        default=' ', help='separator on right side')
+    parser.add_argument('-l', '--lower', dest='lower', action='store_true',
+                        default=False, help='lower all words')
+    parser.add_argument('-e', '--encoding', dest='encoding', type=str,
+                        default='utf8',
+                        help='input encoding. Output is always UTF8')
 
     return parser
 
@@ -41,14 +42,14 @@ def remove_spec(line, cfg):
 def normalize_word(word, cfg):
     if not word_re.match(word):
         return None
-    return word
+    return word.strip("'\"")
 
 def main():
     parser = setup_parser()
     cfg = parser.parse_args()
 
     for l in stdin:
-        tok = tokenize_line(l.decode(cfg.encoding, 'ignore'), cfg)
+        tok = tokenize_line(l.strip().decode(cfg.encoding, 'ignore'), cfg)
         stdout.write('\t'.join(tok).encode('utf8') + '\n')
 
 
