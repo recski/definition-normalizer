@@ -3,15 +3,21 @@ from random import random
 from collections import defaultdict
 from sys import stdin
 import logging
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s : " +
+    "%(module)s (%(lineno)s) - %(levelname)s - %(message)s")
 
 
 def parse_args():
     p = ArgumentParser()
     p.add_argument('-d', '--definitions', type=str, default="stdin")
     p.add_argument('-i', '--max-iter', type=int, default=10)
-    p.add_argument('-m', '--mode', choices=['rare', 'frequent', 'random', 'alpha', 'deflen', 'invdeflen'], default='rare',
-                   help="Skip most frequent/rare words or choose random words to skip")
+    p.add_argument(
+        '-m', '--mode',
+        choices=['rare', 'frequent', 'random', 'alpha', 'deflen', 'invdeflen'],
+        default='rare',
+        help="Skip most frequent/rare words or choose random words to skip")
     p.add_argument('-e', '--error-fn', type=str, default="errors")
     return p.parse_args()
 
@@ -134,6 +140,7 @@ def correct_integrity(graph, error_fn):
 
 def main():
     args = parse_args()
+    logging.info('reading definition graph...')
     if args.definitions == "stdin":
         def_graph = read_definition_graph(stdin)
     else:
@@ -142,9 +149,11 @@ def main():
     correct_integrity(def_graph, args.error_fn)
     logging.info('Definition integrity corrected')
     freq = get_freqs(def_graph, args.mode)
-    create_uroboros(def_graph, mode=args.mode, max_iter=args.max_iter, freqs=freq)
+    create_uroboros(def_graph, mode=args.mode, max_iter=args.max_iter,
+                    freqs=freq)
     for word, right_side in def_graph.iteritems():
-        print(u'{0}\t{1}'.format(word, '\t'.join(sorted(right_side))).encode('utf8'))
+        print(u'{0}\t{1}'.format(
+            word, '\t'.join(sorted(right_side))).encode('utf8'))
 
 if __name__ == '__main__':
     main()
